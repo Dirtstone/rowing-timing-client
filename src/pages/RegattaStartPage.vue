@@ -13,62 +13,74 @@
             <q-card-section>
               <q-list bordered class="rounded-borders">
                 <q-expansion-item
-                  v-for="(division, divisionIndex) of race.divisions"
-                  v-bind="division.number"
+                  v-for="divisionNumber in getNumberOfDivisions(raceIndex)"
+                  v-bind="divisionNumber"
                   switch-toggle-side
                   expand-separator
-                  :label="'Abteilung: ' + String(division.number)"
-                  @dragenter="onDragEnter(raceIndex, divisionIndex, $event)"
+                  :label="'Abteilung: ' + String(divisionNumber)"
+                  @dragenter="onDragEnter(raceIndex, divisionNumber, $event)"
                   @dragleave="onDragLeave"
-                  @dragover="onDragOver(raceIndex, divisionIndex, $event)"
-                  @drop="onDrop(raceIndex, divisionIndex, $event)"
+                  @dragover="onDragOver(raceIndex, divisionNumber, $event)"
+                  @drop="onDrop(raceIndex, divisionNumber, $event)"
                 >
-                  <q-btn v-if="division.boats.every((boat) => !boat.startTime)"
-                         @click="timeDivision(raceIndex, divisionIndex)">Abteilung Start
+                  <q-btn v-if="race.boats.every((boat) => boat.division == divisionNumber && !boat.startTime)"
+                         @click="timeDivision(raceIndex, divisionNumber)">Abteilung Start
                   </q-btn>
                   <q-card>
                     <q-card-section>
                       <q-list>
-                        <q-item v-for="(boat, boatIndex) of division.boats" class="q-list--padding" draggable="true"
-                                @dragstart="onDragStart(raceIndex, divisionIndex, boatIndex, $event)">
-                          <q-card class="my-card">
-                            <q-card-section class="bg-primary text-white">
-                              <div class="text-h6">{{ boat.name }}</div>
-                              <div class="text-subtitle2 row">
-                                <div style="padding-right: 50px ">
-                                  Startnummer: {{ boat.number }}
+                        <span v-for="(boat, boatIndex) of race.boats">
+                          <q-item v-if="boat.division == divisionNumber"
+                                  class="q-list--padding" draggable="true"
+                                  @dragstart="onDragStart(raceIndex, divisionNumber, boatIndex, $event)">
+                            <q-card class="my-card">
+                              <q-card-section class="bg-primary text-white">
+                                <div class="text-h6">{{ boat.name }}</div>
+                                <div class="text-subtitle2 row">
+                                  <div style="padding-right: 50px ">
+                                    Startnummer: {{ boat.number }}
+                                  </div>
+                                  <div>
+                                    Athleten: {{ boat.athletes.join(", ") }}
+                                  </div>
                                 </div>
-                                <div>
-                                  Athleten: {{ boat.athletes.join(", ") }}
+                              </q-card-section>
+
+                              <q-separator/>
+
+                              <q-card-actions>
+                                <div class="row">
+                                  <q-input filled v-model="boatTimes[raceIndex][boatIndex]">
+                                    <template v-slot:append>
+                                      <q-icon name="access_time" class="cursor-pointer">
+                                        <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                                          <q-time
+                                            v-model="boatTimes[raceIndex][boatIndex]"
+                                            with-seconds
+                                            format24h
+                                          >
+                                            <div class="row items-center justify-end">
+                                              <q-btn v-close-popup label="Close" color="primary" flat />
+                                            </div>
+                                          </q-time>
+                                        </q-popup-proxy>
+                                      </q-icon>
+                                    </template>
+                                  </q-input>
+                                  <q-btn v-if="!boat.startTime" @click="timeBoat(raceIndex, boatIndex)">
+                                    Time Now
+                                  </q-btn>
                                 </div>
-                              </div>
-                            </q-card-section>
-
-                            <q-separator/>
-
-                            <q-card-actions>
-                              <div class="row">
-                                <q-input filled v-model="boat.startTime" mask="####/##/## ##:##:##:##"
-                                         label="Startzeit">
-
-                                  <template v-slot:append>
-                                    <q-icon name="access_time" class="cursor-pointer"></q-icon>
-                                  </template>
-                                </q-input>
-                                <q-btn v-if="!boat.startTime" @click="timeBoat(raceIndex, divisionIndex, boatIndex)">
-                                  Time Now
-                                </q-btn>
-                              </div>
-                              <div class="row">
-                                <q-toggle v-model="boat.didNotAttend" label="Nicht am Start erschienen"/>
-                                <q-input type="text" v-if="boat.didNotAttend" v-model="boat.reason"
-                                         label="Grund für Nicht Erscheinen"/>
-                              </div>
-                            </q-card-actions>
-                          </q-card>
-                        </q-item>
+                                <div class="row">
+                                  <q-toggle v-model="boat.didNotAttend" label="Nicht am Start erschienen"/>
+                                  <q-input type="text" v-if="boat.didNotAttend" v-model="boat.reason"
+                                           label="Grund für nicht Erscheinen"/>
+                                </div>
+                              </q-card-actions>
+                            </q-card>
+                          </q-item>
+                        </span>
                       </q-list>
-
                     </q-card-section>
                   </q-card>
                 </q-expansion-item>
@@ -83,31 +95,53 @@
 
 <script setup lang="ts">
 import {useRegattaStore} from "stores/regatta-store";
+import {computed, ref, Ref, WritableComputedRef} from "vue";
 
 const regattaStore = useRegattaStore();
-const timeBoat = (raceIndex: number, divisionIndex: number, boatIndex: number) => {
-  //@ts-ignore
-  regattaStore.regatta.races[raceIndex].divisions[divisionIndex].boats[boatIndex].startTime = new Date().toJSON();
-  console.log(new Date().toJSON());
+
+const timeBoat = (raceIndex: number, boatIndex: number) => {
+  regattaStore.regatta.races[raceIndex].boats[boatIndex].startTime = new Date();
 }
 
 const timeDivision = (raceIndex: number, divisionIndex: number) => {
-  for (const boatIndex in regattaStore.regatta.races[raceIndex].divisions[divisionIndex].boats) {
-    //@ts-ignore
-    regattaStore.regatta.races[raceIndex].divisions[divisionIndex].boats[boatIndex].startTime = new Date().toJSON();
+  for (const boatIndex in regattaStore.regatta.races[raceIndex].boats) {
+    regattaStore.regatta.races[raceIndex].boats[boatIndex].startTime = new Date();
   }
 }
 
+const boatTimes: Ref<Array<Array<WritableComputedRef<String>>>> = ref([]);
 
-const onDragStart = (raceIndex: number, divisionIndex: number, boatIndex: number, e: any) => {
+for (let race of regattaStore.regatta.races){
+  let raceTimes: Array<WritableComputedRef<String>> = []
+  for (let boat of race.boats){
+    raceTimes.push(computed({
+      get(): string{
+        return boat.startTime ? boat.startTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: '2'}): "";
+      },
+      set(newValue: string):void{
+        if (newValue == ""){
+          boat.startTime = undefined
+        }else{
+          const newDateString = ((new Date().toISOString().split("T")[0]) + "T" + newValue).replace(",", ".")
+          const newDate = new Date(Date.parse(newDateString));
+          console.log(newDateString)
+          boat.startTime = newDate;
+        }
+      }
+    }));
+  }
+  boatTimes.value.push(raceTimes)
+}
+
+const onDragStart = (raceIndex: number, divisionNumber: number, boatIndex: number, e: any) => {
   e.dataTransfer.setData('raceIndex', String(raceIndex));
-  e.dataTransfer.setData('divisionIndex', String(divisionIndex));
+  e.dataTransfer.setData('divisionNumber', String(divisionNumber));
   e.dataTransfer.setData('boatIndex', String(boatIndex));
 }
 
-function onDragEnter(raceIndex: number, divisionIndex: number, e: any) {
+function onDragEnter(raceIndex: number, divisionNumber: number, e: any) {
   // don't drop on other draggables
-  if (e.target.draggable === false && Number(e.dataTransfer.getData('raceIndex')) === raceIndex && divisionIndex !== Number(e.dataTransfer.getData('divisionIndex'))) {
+  if (e.target.draggable === false && Number(e.dataTransfer.getData('raceIndex')) === raceIndex && divisionNumber !== Number(e.dataTransfer.getData('divisionNumber'))) {
     e.target.classList.add('drag-enter')
   }
 }
@@ -127,10 +161,10 @@ function onDrop(raceIndex: number, divisionIndex: number, e: any) {
   const sourceBoatIndex = Number(e.dataTransfer.getData('boatIndex'));
   const sourceRaceIndex = Number(e.dataTransfer.getData('raceIndex'));
 
-  if (raceIndex !== sourceRaceIndex){
+  if (raceIndex !== sourceRaceIndex) {
     return;
   }
-  if (divisionIndex === sourceDivisionIndex){
+  if (divisionIndex === sourceDivisionIndex) {
     return;
   }
 
@@ -141,12 +175,20 @@ function onDrop(raceIndex: number, divisionIndex: number, e: any) {
     return
   }
 
-
-
-  regattaStore.switchDivision(raceIndex, divisionIndex, sourceDivisionIndex, sourceBoatIndex);
+  regattaStore.switchDivision(raceIndex, sourceBoatIndex, divisionIndex);
 }
 
 
+function getNumberOfDivisions(raceIndex: number): number {
+  let maxDivisions = 1;
+  for (const boat of regattaStore.regatta.races[raceIndex].boats) {
+    if (maxDivisions < boat.division) {
+      maxDivisions = boat.division;
+    }
+  }
+
+  return maxDivisions
+}
 </script>
 
 <style scoped>

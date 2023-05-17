@@ -1,6 +1,9 @@
 import { app, BrowserWindow, nativeTheme } from 'electron';
 import path from 'path';
 import os from 'os';
+import { ipcMain } from 'electron'
+import { writeFileSync, readFileSync, existsSync } from 'fs';
+import {v4 as uuid4} from 'uuid'
 
 // needed in case process is undefined under Linux
 const platform = process.platform || os.platform();
@@ -28,6 +31,7 @@ function createWindow() {
       contextIsolation: true,
       // More info: https://v2.quasar.dev/quasar-cli-vite/developing-electron-apps/electron-preload-script
       preload: path.resolve(__dirname, process.env.QUASAR_ELECTRON_PRELOAD),
+      sandbox: false
     },
   });
 
@@ -47,6 +51,38 @@ function createWindow() {
     mainWindow = undefined;
   });
 }
+
+const storePath = path.join(app.getPath('userData'), '/staticStore.json');
+const sessionPath = path.join(app.getPath('userData'), '/sessionStore.json');
+
+if(!existsSync(sessionPath)){
+  const session = {
+    clientId: uuid4(),
+    regattaUuid: "",
+    target: ""
+  };
+
+  writeFileSync(sessionPath, JSON.stringify(session));
+}
+
+ipcMain.handle("clientStorage:update", (ev, regattaUuid: string, target: string) => {
+  let session = JSON.parse(readFileSync(sessionPath).toString());
+  session.regattaUuid = regattaUuid;
+  session.target = target;
+  writeFileSync(storePath, session);
+});
+
+ipcMain.handle("clientStorage:load", (ev) => {
+  return readFileSync(sessionPath).toString();
+});
+
+ipcMain.handle("staticStore:save", (ev, storeData: string) => {
+  writeFileSync(storePath, storeData);
+});
+
+ipcMain.handle("staticStore:load", (ev) => {
+  return readFileSync(storePath).toString();
+});
 
 app.whenReady().then(createWindow);
 

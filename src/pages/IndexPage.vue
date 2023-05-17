@@ -1,48 +1,41 @@
 <template>
   <q-page class="row items-center justify-evenly">
+
+    <q-input v-model="regattaUuid" label="Regatta Token"/>
+    <q-select v-model="target" :options="['start', 'finish']" label="Rolle"/>
+    <q-btn @click="getRole">Synchronisieren</q-btn>
+
     <q-btn @click="$router.replace('/regatta-start')">
       Start
     </q-btn>
     <q-btn @click="$router.replace('/regatta-finish')">
       Finish
     </q-btn>
-    <example-component
-      title="Example component"
-      active
-      :todos="todos"
-      :meta="meta"
-    ></example-component>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import {Todo, Meta} from 'components/models';
-import ExampleComponent from 'components/ExampleComponent.vue';
-import {ref} from 'vue';
+import {Ref, ref} from 'vue';
+import {api} from 'boot/axios'
+import {useRegattaStore} from "stores/regatta-store";
 
-const todos = ref<Todo[]>([
-  {
-    id: 1,
-    content: 'ct1'
-  },
-  {
-    id: 2,
-    content: 'ct2'
-  },
-  {
-    id: 3,
-    content: 'ct3'
-  },
-  {
-    id: 4,
-    content: 'ct4'
-  },
-  {
-    id: 5,
-    content: 'ct5'
+const regattaStore = useRegattaStore();
+
+const target: Ref<string> = ref("start")
+const regattaUuid : Ref<string> = ref("")
+
+async function getRole(){
+  const response = await api.get(`client/${target.value}/${regattaUuid.value}`, {params:{ clientId: regattaStore.session.clientId}});
+  console.log(response);
+  if (response.status == 200 && response.data.success){
+    regattaStore.session.regattaUuid = regattaUuid.value;
+    regattaStore.session.target = target.value;
+    regattaStore.regatta = response.data.data;
+    console.log(regattaStore.regatta);
+  }else {
+    console.log("Error happened")
+    //ToDo Handle Error
   }
-]);
-const meta = ref<Meta>({
-  totalCount: 1200
-});
+}
+
 </script>

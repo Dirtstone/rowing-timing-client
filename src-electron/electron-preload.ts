@@ -27,3 +27,17 @@
  *   }
  * }
  */
+import {contextBridge, ipcRenderer} from 'electron'
+
+
+contextBridge.exposeInMainWorld('staticStore', {
+    save: (storeData: string) => ipcRenderer.invoke('staticStore:save', storeData),
+    load: () => ipcRenderer.invoke('staticStore:load'),
+  }
+)
+
+contextBridge.exposeInMainWorld('clientStorage', {
+    update: (regattaUUID: string, target: string) => ipcRenderer.invoke('clientStorage:update', regattaUUID, target),
+    load: () => ipcRenderer.invoke('clientStorage:load'),
+  }
+)
