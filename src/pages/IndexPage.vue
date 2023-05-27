@@ -5,10 +5,10 @@
     <q-select v-model="target" :options="['start', 'finish']" label="Rolle"/>
     <q-btn @click="getRole">Synchronisieren</q-btn>
 
-    <q-btn @click="$router.replace('/regatta-start')">
+    <q-btn @click="$router.replace('/start')">
       Start
     </q-btn>
-    <q-btn @click="$router.replace('/regatta-finish')">
+    <q-btn @click="$router.replace('/finish')">
       Finish
     </q-btn>
   </q-page>
@@ -30,6 +30,11 @@ async function getRole(){
   if (response.status == 200 && response.data.success){
     regattaStore.session.regattaUuid = regattaUuid.value;
     regattaStore.session.target = target.value;
+
+    //@ts-ignore
+    await window.clientStorage.update(regattaUuid.value, target.value);
+    console.log(regattaUuid.value)
+    console.log(target.value)
     regattaStore.regatta = response.data.data;
     console.log(regattaStore.regatta);
   }else {

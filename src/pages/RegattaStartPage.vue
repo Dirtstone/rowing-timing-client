@@ -100,12 +100,12 @@ import {computed, ref, Ref, WritableComputedRef} from "vue";
 const regattaStore = useRegattaStore();
 
 const timeBoat = (raceIndex: number, boatIndex: number) => {
-  regattaStore.regatta.races[raceIndex].boats[boatIndex].startTime = new Date();
+  regattaStore.regatta.races[raceIndex].boats[boatIndex].startTime = new Date().toISOString();
 }
 
 const timeDivision = (raceIndex: number, divisionIndex: number) => {
   for (const boatIndex in regattaStore.regatta.races[raceIndex].boats) {
-    regattaStore.regatta.races[raceIndex].boats[boatIndex].startTime = new Date();
+    regattaStore.regatta.races[raceIndex].boats[boatIndex].startTime = new Date().toISOString();
   }
 }
 
@@ -116,16 +116,20 @@ for (let race of regattaStore.regatta.races){
   for (let boat of race.boats){
     raceTimes.push(computed({
       get(): string{
-        return boat.startTime ? boat.startTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: '2'}): "";
+        return boat.startTime ? new Date(Date.parse(boat.startTime)).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: '2'}): "";
       },
       set(newValue: string):void{
         if (newValue == ""){
-          boat.startTime = undefined
+          boat.startTime = ""
         }else{
-          const newDateString = ((new Date().toISOString().split("T")[0]) + "T" + newValue).replace(",", ".")
-          const newDate = new Date(Date.parse(newDateString));
-          console.log(newDateString)
-          boat.startTime = newDate;
+          const newDateNumber = Date.parse(((new Date().toISOString().split("T")[0]) + "T" + newValue).replace(",", "."))
+          if (!isNaN(newDateNumber)){
+            const newDate = new Date(newDateNumber);
+            boat.startTime = newDate.toISOString();
+          }else{
+            //ToDo Show error message
+            //  Actually maybe not. Could work without
+          }
         }
       }
     }));
@@ -186,7 +190,6 @@ function getNumberOfDivisions(raceIndex: number): number {
       maxDivisions = boat.division;
     }
   }
-
   return maxDivisions
 }
 </script>

@@ -135,16 +135,20 @@ for (let race of regattaStore.regatta.races){
   for (let boat of race.boats){
     raceTimes.push(computed({
       get(): string{
-        return boat.endTime ? boat.endTime.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: '2'}): "";
+        return boat.endTime ? new Date(boat.endTime).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: '2'}): "";
       },
       set(newValue: string):void{
         if (newValue == ""){
-          boat.endTime = undefined
+          boat.endTime = ""
         }else{
-          const newDateString = ((new Date().toISOString().split("T")[0]) + "T" + newValue).replace(",", ".")
-          const newDate = new Date(Date.parse(newDateString));
-          console.log(newDateString)
-          boat.endTime = newDate;
+          const newDateNumber = Date.parse(((new Date().toISOString().split("T")[0]) + "T" + newValue).replace(",", "."))
+          if (!isNaN(newDateNumber)){
+            const newDate = new Date(newDateNumber);
+            boat.endTime = newDate.toISOString();
+          }else{
+            //ToDo Show error message
+            //  Actually maybe not. Could work without
+          }
         }
       }
     }));
@@ -157,7 +161,7 @@ const resetTimes = () =>{
 }
 
 const onDragStart = (date:Date, e:any)=>{
-  e.dataTransfer.setData('date', date.toJSON())
+  e.dataTransfer.setData('date', date.toISOString())
 }
 
 function onDragEnter (e: any) {
@@ -182,12 +186,11 @@ function onDrop(raceIndex: number, boatIndex: number, e:any){
   if (e.target.draggable === true) {
     return
   }
-  const value = e.dataTransfer.getData('date');
-  regattaStore.regatta.races[raceIndex].boats[boatIndex].endTime = new Date(Date.parse(value));
+  regattaStore.regatta.races[raceIndex].boats[boatIndex].endTime = e.dataTransfer.getData('date');
 }
 
 const timeBoat = (raceIndex: number, boatIndex: number) => {
-  regattaStore.regatta.races[raceIndex].boats[boatIndex].endTime = new Date();
+  regattaStore.regatta.races[raceIndex].boats[boatIndex].endTime = new Date().toISOString();
 }
 
 function getNumberOfDivisions(raceIndex: number): number {

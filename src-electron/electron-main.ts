@@ -69,7 +69,9 @@ ipcMain.handle("clientStorage:update", (ev, regattaUuid: string, target: string)
   let session = JSON.parse(readFileSync(sessionPath).toString());
   session.regattaUuid = regattaUuid;
   session.target = target;
-  writeFileSync(storePath, session);
+  console.log(session)
+
+  writeFileSync(sessionPath, JSON.stringify(session));
 });
 
 ipcMain.handle("clientStorage:load", (ev) => {
