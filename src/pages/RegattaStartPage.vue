@@ -23,7 +23,7 @@
                   @dragover="onDragOver(raceIndex, divisionNumber, $event)"
                   @drop="onDrop(raceIndex, divisionNumber, $event)"
                 >
-                  <q-btn v-if="race.boats.every((boat) => boat.division == divisionNumber && !boat.startTime)"
+                  <q-btn v-if="race.boats.every((boat) => boat.division == divisionNumber ? boat.startTime == '' : true)"
                          @click="timeDivision(raceIndex, divisionNumber)">Abteilung Start
                   </q-btn>
                   <q-card>
@@ -105,7 +105,9 @@ const timeBoat = (raceIndex: number, boatIndex: number) => {
 
 const timeDivision = (raceIndex: number, divisionIndex: number) => {
   for (const boatIndex in regattaStore.regatta.races[raceIndex].boats) {
-    regattaStore.regatta.races[raceIndex].boats[boatIndex].startTime = new Date().toISOString();
+    if(regattaStore.regatta.races[raceIndex].boats[boatIndex].division === divisionIndex){
+      regattaStore.regatta.races[raceIndex].boats[boatIndex].startTime = new Date().toISOString();
+    }
   }
 }
 

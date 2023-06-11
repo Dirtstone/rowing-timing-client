@@ -2,6 +2,7 @@
   <q-page>
     <q-splitter
       v-model="splitterModel"
+      style="height: 700px"
     >
       <template v-slot:before>
         <div class="q-pa-md q-gutter-sm">
@@ -72,7 +73,7 @@
                                       </q-btn>
                                     </div>
                                     <div class="row">
-                                      <q-toggle v-model="boat.didNotAttend" label="Nicht am Start erschienen" disable/>
+                                      <q-toggle v-model="boat.didNotAttend" label="Ziel nicht erreicht"/>
                                     </div>
                                   </q-card-actions>
                                 </q-card>

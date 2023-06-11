@@ -58,7 +58,7 @@ const router = useRouter();
 
 async function synchronize(): Promise<{ success: boolean, message: string }>{
 
-  const response = await api.post(`/client/${regattaStore.session.target}/${regattaStore.session.regattaUuid}`, {clientId: regattaStore.session.clientId, regatta: regattaStore.regatta});
+  const response = await api.post(`client/${regattaStore.session.target}/${regattaStore.session.regattaUuid}`, {clientId: regattaStore.session.clientId, regatta: regattaStore.regatta});
 
   if (response.status == 200 && response.data.success){
     return {success: true, message: response.data.message}
@@ -86,7 +86,7 @@ async function closeRegatta(){
     return
   }
 
-  const response = await api.delete(`/client/${regattaStore.session.target}/${regattaStore.session.regattaUuid}`, {params: {clientId: regattaStore.session.clientId}})
+  const response = await api.delete(`client/${regattaStore.session.target}/${regattaStore.session.regattaUuid}`, {params: {clientId: regattaStore.session.clientId}})
   if (response.status == 200 && response.data.success){
     regattaStore.session.regattaUuid = "";
     regattaStore.session.target = "";

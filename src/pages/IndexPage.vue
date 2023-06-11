@@ -18,9 +18,10 @@
 import {Ref, ref} from 'vue';
 import {api} from 'boot/axios'
 import {useRegattaStore} from "stores/regatta-store";
+import {useRouter} from "vue-router";
 
 const regattaStore = useRegattaStore();
-
+const router = useRouter();
 const target: Ref<string> = ref("start")
 const regattaUuid : Ref<string> = ref("")
 
@@ -37,6 +38,8 @@ async function getRole(){
     console.log(target.value)
     regattaStore.regatta = response.data.data;
     console.log(regattaStore.regatta);
+
+    router.push(`/${target.value}`);
   }else {
     console.log("Error happened")
     //ToDo Handle Error
